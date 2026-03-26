@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Just For Us</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600&display=swap');
@@ -38,7 +38,6 @@
             width: 100%;
         }
         
-        /* Cinematic Background */
         .cinematic-bg {
             position: fixed;
             inset: 0;
@@ -49,6 +48,16 @@
             z-index: -2;
         }
         
+        .wallpaper-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -3;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        
         .grain {
             position: fixed;
             inset: 0;
@@ -57,7 +66,6 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
         
-        /* SVG Icons */
         .icon {
             width: 24px;
             height: 24px;
@@ -75,6 +83,7 @@
             align-items: center;
             justify-content: center;
             padding: 24px;
+            z-index: 100;
         }
         
         .logo-container {
@@ -113,6 +122,14 @@
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .profile-pic-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         
         .brand-title {
@@ -160,6 +177,7 @@
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center;
+            position: relative;
         }
         
         .user-card:hover { transform: translateY(-2px); }
@@ -176,18 +194,41 @@
             box-shadow: 0 0 30px var(--favour-glow);
         }
         
-        .user-avatar-svg {
-            width: 56px;
-            height: 56px;
+        .user-avatar-container {
+            width: 70px;
+            height: 70px;
             margin: 0 auto 12px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
         }
         
-        .timmy .user-avatar-svg { background: rgba(10,132,255,0.2); color: var(--timmy-blue); }
-        .favour .user-avatar-svg { background: rgba(255,55,95,0.2); color: var(--favour-rose); }
+        .timmy .user-avatar-container { background: rgba(10,132,255,0.2); color: var(--timmy-blue); }
+        .favour .user-avatar-container { background: rgba(255,55,95,0.2); color: var(--favour-rose); }
+        
+        .user-card.timmy.selected .user-avatar-container { border-color: var(--timmy-blue); }
+        .user-card.favour.selected .user-avatar-container { border-color: var(--favour-rose); }
+        
+        .add-photo-btn {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: black;
+            font-size: 16px;
+        }
         
         .user-label {
             font-size: 15px;
@@ -254,6 +295,7 @@
             display: none;
             height: 100%;
             flex-direction: column;
+            position: relative;
         }
         
         .chat-header {
@@ -284,16 +326,49 @@
             text-align: center;
         }
         
+        .partner-avatar-container {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 4px;
+        }
+        
         .partner-avatar {
-            width: 36px;
-            height: 36px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             background: rgba(255,55,95,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 4px;
             color: var(--favour-rose);
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .partner-avatar.has-streak {
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .partner-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .streak-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: black;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            border: 2px solid black;
         }
         
         .partner-name {
@@ -346,6 +421,11 @@
             30% { transform: translateY(-4px); }
         }
         
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
         .header-action {
             width: 40px;
             height: 40px;
@@ -366,6 +446,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            position: relative;
         }
         
         .message {
@@ -375,6 +456,7 @@
             font-size: 16px;
             line-height: 1.4;
             animation: messageIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
         
         @keyframes messageIn {
@@ -406,6 +488,23 @@
             letter-spacing: 1px;
         }
         
+        .message.view-once {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .view-once-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #FFD700;
+            color: black;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        
         .message-meta {
             font-size: 11px;
             opacity: 0.7;
@@ -421,9 +520,55 @@
         }
         
         .message-media {
-            max-width: 200px;
+            max-width: 280px;
             border-radius: 12px;
             margin-bottom: 4px;
+            cursor: pointer;
+        }
+        
+        .voice-note {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 200px;
+        }
+        
+        .voice-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: transparent;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .voice-waveform {
+            flex: 1;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .wave-bar {
+            width: 3px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 20%; }
+            50% { height: 100%; }
+        }
+        
+        .voice-duration {
+            font-size: 12px;
+            opacity: 0.8;
         }
         
         /* Input Area */
@@ -462,6 +607,12 @@
         .action-chip:hover {
             background: rgba(255,255,255,0.08);
             color: white;
+        }
+        
+        .action-chip.recording {
+            background: #FF3B30;
+            color: white;
+            animation: pulse 1s infinite;
         }
         
         .input-row {
@@ -504,7 +655,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
+        
+        .input-icon:hover { color: white; }
         
         .send-button {
             width: 44px;
@@ -520,6 +674,7 @@
             transition: transform 0.2s;
         }
         
+        .send-button.favour { background: var(--favour-rose); }
         .send-button:active { transform: scale(0.95); }
         
         /* Floating Action */
@@ -583,13 +738,13 @@
         
         .game-selector {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr;
             gap: 16px;
             margin-bottom: 20px;
         }
         
         .game-tile {
-            aspect-ratio: 1;
+            aspect-ratio: 2/1;
             border-radius: 20px;
             border: 1px solid var(--border);
             background: rgba(255,255,255,0.03);
@@ -614,16 +769,14 @@
         }
         
         .game-tile.tictactoe .game-icon-bg { background: linear-gradient(135deg, #30D158, #28CD41); }
-        .game-tile.paintball .game-icon-bg { background: linear-gradient(135deg, #FF9500, #FF6B00); }
-        .game-tile.cuppong .game-icon-bg { background: linear-gradient(135deg, #AF52DE, #8944AB); }
         
         .game-label {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 600;
         }
         
         .game-status {
-            font-size: 12px;
+            font-size: 14px;
             color: rgba(255,255,255,0.5);
         }
         
@@ -702,6 +855,16 @@
         .tictactoe-cell.x { color: var(--timmy-blue); }
         .tictactoe-cell.o { color: var(--favour-rose); }
         
+        .tictactoe-cell.win {
+            background: rgba(255,255,255,0.2);
+            animation: winPulse 0.5s ease-in-out;
+        }
+        
+        @keyframes winPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
         .game-status-bar {
             padding: 20px;
             text-align: center;
@@ -767,21 +930,42 @@
             background: var(--bg-dark);
             z-index: 2500;
             flex-direction: column;
+        }
+        
+        .call-background {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(10,132,255,0.1), rgba(255,55,95,0.1));
+            z-index: -1;
+        }
+        
+        .call-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 40px;
         }
         
         .call-avatar-large {
-            width: 140px;
-            height: 140px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             background: linear-gradient(135deg, rgba(255,55,95,0.2), rgba(255,55,95,0.05));
-            border: 2px solid rgba(255,55,95,0.3);
+            border: 3px solid rgba(255,55,95,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 24px;
             animation: callPulse 2s infinite;
+            overflow: hidden;
+        }
+        
+        .call-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         @keyframes callPulse {
@@ -801,16 +985,47 @@
             font-variant-numeric: tabular-nums;
         }
         
+        .call-status {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+        }
+        
+        .remote-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        
+        .local-video {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            height: 160px;
+            border-radius: 16px;
+            object-fit: cover;
+            z-index: 2;
+            border: 2px solid rgba(255,255,255,0.3);
+            transform: scaleX(-1);
+        }
+        
         .call-controls {
             position: absolute;
             bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            gap: 32px;
+            gap: 24px;
+            z-index: 10;
         }
         
         .call-btn {
-            width: 72px;
-            height: 72px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             border: none;
             display: flex;
@@ -820,105 +1035,497 @@
             gap: 4px;
             color: white;
             cursor: pointer;
+            transition: all 0.2s;
         }
         
+        .call-btn:hover { transform: scale(1.1); }
+        
         .call-btn.mute { background: rgba(255,255,255,0.2); }
-        .call-btn.end { background: #FF3B30; }
+        .call-btn.video { background: rgba(255,255,255,0.2); }
+        .call-btn.flip { background: rgba(255,255,255,0.2); }
+        .call-btn.end { background: #FF3B30; width: 70px; height: 70px; }
+        
+        .call-btn.active { background: var(--timmy-blue); }
         
         .call-btn span:last-child {
-            font-size: 11px;
+            font-size: 10px;
+            font-weight: 500;
+            position: absolute;
+            bottom: -20px;
+        }
+        
+        /* Incoming Call */
+        .incoming-call {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2600;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .incoming-actions {
+            display: flex;
+            gap: 40px;
+            margin-top: 60px;
+        }
+        
+        .incoming-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .incoming-btn:hover { transform: scale(1.1); }
+        .incoming-btn.accept { background: #30D158; }
+        .incoming-btn.decline { background: #FF3B30; }
+        
+        /* Wallpaper Modal */
+        .wallpaper-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1500;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            overflow-y: auto;
+        }
+        
+        .wallpaper-option {
+            aspect-ratio: 9/16;
+            border-radius: 16px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .wallpaper-option.selected { border-color: var(--timmy-blue); }
+        .wallpaper-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .wallpaper-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Snap Streak Modal */
+        .streak-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1600;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .streak-header {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .streak-flame {
+            font-size: 80px;
+            margin-bottom: 16px;
+            animation: flame 1s ease-in-out infinite;
+        }
+        
+        @keyframes flame {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .streak-count {
+            font-size: 48px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        
+        .streak-label {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+        }
+        
+        .streak-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .streak-day {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .streak-day.active {
+            background: #FFD700;
+            color: black;
+            font-weight: 700;
+        }
+        
+        .streak-day.today {
+            border: 2px solid #FFD700;
+        }
+        
+        /* View Once Modal */
+        .view-once-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: black;
+            z-index: 3500;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .view-once-content {
+            position: relative;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .view-once-content img, .view-once-content video {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        
+        .view-once-timer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .view-once-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+        }
+        
+        /* Camera Interface */
+        .camera-interface {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: black;
+            z-index: 1800;
+            flex-direction: column;
+        }
+        
+        #cameraPreview {
+            flex: 1;
+            object-fit: cover;
+            width: 100%;
+        }
+        
+        .camera-controls {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.8);
+        }
+        
+        .camera-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .camera-btn::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .camera-btn:active::after { transform: scale(0.9); }
+        
+        .camera-close {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+        }
+        
+        .camera-flip {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 5000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 90%;
+        }
+        
+        .notification.show { transform: translateX(-50%) translateY(0); }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification.poke .notification-icon { background: var(--timmy-blue); }
+        .notification.message .notification-icon { background: var(--favour-rose); }
+        .notification.call .notification-icon { background: #30D158; }
+        
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1400;
+            flex-direction: column;
+        }
+        
+        .settings-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .settings-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .settings-list {
+            padding: 20px;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--glass);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .settings-item:hover { background: rgba(255,255,255,0.12); }
+        
+        .settings-item-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .settings-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .settings-label {
+            font-size: 16px;
             font-weight: 500;
         }
         
-        #fileInput, #cameraInput { display: none; }
+        .toggle {
+            width: 50px;
+            height: 28px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.2);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toggle.active { background: var(--timmy-blue); }
+        .toggle.active.favour { background: var(--favour-rose); }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+        
+        .toggle.active::after { transform: translateX(22px); }
+        
+        /* Hidden inputs */
+        #fileInput, #profileInput, #wallpaperInput { display: none; }
     </style>
 </head>
 <body>
+    <div class="wallpaper-bg" id="wallpaperBg"></div>
     <div class="cinematic-bg"></div>
     <div class="grain"></div>
     
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div class="notification-icon">
+            <svg class="icon"><use href="#icon-poke"/></svg>
+        </div>
+        <div>
+            <div style="font-weight: 600;" id="notifTitle">Notification</div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.6);" id="notifBody">Body</div>
+        </div>
+    </div>
+
     <!-- SVG Definitions -->
     <svg style="display: none;">
         <defs>
-            <!-- User Icon -->
             <symbol id="icon-user" viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
                 <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </symbol>
-            <!-- Send Icon -->
             <symbol id="icon-send" viewBox="0 0 24 24">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </symbol>
-            <!-- Phone Icon -->
             <symbol id="icon-phone" viewBox="0 0 24 24">
                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </symbol>
-            <!-- Video Icon -->
             <symbol id="icon-video" viewBox="0 0 24 24">
                 <polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
             </symbol>
-            <!-- Camera Icon -->
             <symbol id="icon-camera" viewBox="0 0 24 24">
                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="currentColor" stroke-width="2"/>
                 <circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
             </symbol>
-            <!-- Game Icon -->
             <symbol id="icon-game" viewBox="0 0 24 24">
                 <rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
                 <path d="M6 12h4M8 10v4M14 12h.01M18 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </symbol>
-            <!-- Grid Icon (TicTacToe) -->
             <symbol id="icon-grid" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2"/>
                 <rect x="14" y="3" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2"/>
                 <rect x="3" y="14" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2"/>
                 <rect x="14" y="14" width="7" height="7" fill="none" stroke="currentColor" stroke-width="2"/>
             </symbol>
-            <!-- Target Icon (Paintball) -->
-            <symbol id="icon-target" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            </symbol>
-            <!-- Cup Icon -->
-            <symbol id="icon-cup" viewBox="0 0 24 24">
-                <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" fill="none" stroke="currentColor" stroke-width="2"/>
-                <line x1="6" y1="1" x2="6" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="10" y1="1" x2="10" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="14" y1="1" x2="14" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </symbol>
-            <!-- Poke Icon -->
             <symbol id="icon-poke" viewBox="0 0 24 24">
                 <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </symbol>
-            <!-- Heart Icon -->
             <symbol id="icon-heart" viewBox="0 0 24 24">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </symbol>
-            <!-- Close Icon -->
             <symbol id="icon-close" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </symbol>
-            <!-- Mic Icon -->
             <symbol id="icon-mic" viewBox="0 0 24 24">
                 <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" fill="none" stroke="currentColor" stroke-width="2"/>
                 <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </symbol>
-            <!-- Gallery Icon -->
             <symbol id="icon-gallery" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
                 <path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </symbol>
-            <!-- X Mark -->
             <symbol id="icon-x" viewBox="0 0 24 24">
                 <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
             </symbol>
-            <!-- O Circle -->
             <symbol id="icon-o" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3"/>
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" fill="none" stroke="currentColor" stroke-width="2"/>
+            </symbol>
+            <symbol id="icon-fire" viewBox="0 0 24 24">
+                <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+            </symbol>
+            <symbol id="icon-pause" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+            </symbol>
+            <symbol id="icon-flip" viewBox="0 0 24 24">
+                <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </symbol>
         </defs>
     </svg>
@@ -928,7 +1535,7 @@
         <div class="logo-container">
             <div class="logo-ring-outer"></div>
             <div class="logo-ring-inner"></div>
-            <div class="logo-core">
+            <div class="logo-core" id="authLogo">
                 <svg class="icon icon-xl" style="color: white;"><use href="#icon-heart"/></svg>
             </div>
         </div>
@@ -939,15 +1546,17 @@
         <div class="glass-panel">
             <div class="user-selector">
                 <div class="user-card timmy" onclick="selectUser('Timmy')">
-                    <div class="user-avatar-svg">
+                    <div class="user-avatar-container" id="timmyAvatar">
                         <svg class="icon icon-lg"><use href="#icon-user"/></svg>
                     </div>
+                    <button class="add-photo-btn" onclick="event.stopPropagation(); selectProfilePic('Timmy')">+</button>
                     <div class="user-label">Timmy</div>
                 </div>
                 <div class="user-card favour" onclick="selectUser('Favour')">
-                    <div class="user-avatar-svg">
+                    <div class="user-avatar-container" id="favourAvatar">
                         <svg class="icon icon-lg"><use href="#icon-user"/></svg>
                     </div>
+                    <button class="add-photo-btn" onclick="event.stopPropagation(); selectProfilePic('Favour')">+</button>
                     <div class="user-label">Favour</div>
                 </div>
             </div>
@@ -968,9 +1577,12 @@
                 <svg class="icon"><use href="#icon-close"/></svg>
             </button>
             
-            <div class="header-info">
-                <div class="partner-avatar" id="partnerAvatar">
-                    <svg class="icon"><use href="#icon-user"/></svg>
+            <div class="header-info" onclick="showStreakModal()">
+                <div class="partner-avatar-container">
+                    <div class="partner-avatar" id="partnerAvatar">
+                        <svg class="icon"><use href="#icon-user"/></svg>
+                    </div>
+                    <div class="streak-badge" id="streakBadge" style="display: none;">🔥 0</div>
                 </div>
                 <div class="partner-name" id="partnerName">Favour</div>
                 <div class="partner-status" id="partnerStatus">
@@ -979,9 +1591,17 @@
                 </div>
             </div>
             
-            <button class="header-action" onclick="startCall()">
-                <svg class="icon"><use href="#icon-video"/></svg>
-            </button>
+            <div class="header-actions">
+                <button class="header-action" onclick="startVoiceCall()">
+                    <svg class="icon"><use href="#icon-phone"/></svg>
+                </button>
+                <button class="header-action" onclick="startVideoCall()">
+                    <svg class="icon"><use href="#icon-video"/></svg>
+                </button>
+                <button class="header-action" onclick="showSettings()">
+                    <svg class="icon"><use href="#icon-settings"/></svg>
+                </button>
+            </div>
         </div>
         
         <div class="messages-area" id="messagesArea">
@@ -998,9 +1618,13 @@
                     <svg class="icon" style="width: 16px; height: 16px;"><use href="#icon-poke"/></svg>
                     Poke
                 </button>
-                <button class="action-chip" onclick="document.getElementById('cameraInput').click()">
+                <button class="action-chip" onclick="openCamera()">
                     <svg class="icon" style="width: 16px; height: 16px;"><use href="#icon-camera"/></svg>
-                    Camera
+                    Snap
+                </button>
+                <button class="action-chip" id="voiceChip" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">
+                    <svg class="icon" style="width: 16px; height: 16px;"><use href="#icon-mic"/></svg>
+                    Hold to Talk
                 </button>
             </div>
             
@@ -1009,12 +1633,12 @@
                     <button class="input-icon" onclick="document.getElementById('fileInput').click()">
                         <svg class="icon"><use href="#icon-gallery"/></svg>
                     </button>
-                    <input type="text" id="messageInput" placeholder="Message" onkeypress="handleKeyPress(event)">
-                    <button class="input-icon">
-                        <svg class="icon"><use href="#icon-mic"/></svg>
+                    <input type="text" id="messageInput" placeholder="Message" onkeypress="handleKeyPress(event)" oninput="handleTyping()">
+                    <button class="input-icon" onclick="toggleViewOnce()" id="viewOnceBtn" title="View Once">
+                        <svg class="icon" style="opacity: 0.5;"><use href="#icon-camera"/></svg>
                     </button>
                 </div>
-                <button class="send-button" onclick="sendMessage()">
+                <button class="send-button" id="sendBtn" onclick="sendMessage()">
                     <svg class="icon"><use href="#icon-send"/></svg>
                 </button>
             </div>
@@ -1039,20 +1663,6 @@
                     </div>
                     <div class="game-label">Tic-Tac-Toe</div>
                     <div class="game-status">Play Now</div>
-                </div>
-                <div class="game-tile paintball" onclick="comingSoon('Paintball')">
-                    <div class="game-icon-bg">
-                        <svg class="icon icon-lg" style="color: white;"><use href="#icon-target"/></svg>
-                    </div>
-                    <div class="game-label">Paintball</div>
-                    <div class="game-status">Coming Soon</div>
-                </div>
-                <div class="game-tile cuppong" onclick="comingSoon('Cup Pong')">
-                    <div class="game-icon-bg">
-                        <svg class="icon icon-lg" style="color: white;"><use href="#icon-cup"/></svg>
-                    </div>
-                    <div class="game-label">Cup Pong</div>
-                    <div class="game-status">Coming Soon</div>
                 </div>
             </div>
             
@@ -1084,7 +1694,6 @@
         <div class="game-status-bar">
             <div class="turn-indicator" id="turnIndicator">
                 <span>Timmy's turn</span>
-                <svg class="icon" style="color: var(--timmy-blue);"><use href="#icon-x"/></svg>
             </div>
         </div>
     </div>
@@ -1099,56 +1708,221 @@
 
     <!-- Call Screen -->
     <div class="call-screen" id="callScreen">
-        <div class="call-avatar-large">
-            <svg class="icon icon-xl" style="color: var(--favour-rose);"><use href="#icon-user"/></svg>
+        <div class="call-background"></div>
+        <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
+        <video class="local-video" id="localVideo" autoplay playsinline muted></video>
+        
+        <div class="call-content" id="callContent">
+            <div class="call-avatar-large" id="callAvatar">
+                <svg class="icon icon-xl" style="color: var(--favour-rose);"><use href="#icon-user"/></svg>
+            </div>
+            <div class="call-name" id="callName">Favour</div>
+            <div class="call-timer" id="callTimer">Calling...</div>
+            <div class="call-status" id="callStatus">Connecting...</div>
         </div>
-        <div class="call-name" id="callName">Favour</div>
-        <div class="call-timer" id="callTimer">Calling...</div>
         
         <div class="call-controls">
-            <button class="call-btn mute">
-                <svg class="icon"><use href="#icon-poke"/></svg>
-                <span>Mute</span>
+            <button class="call-btn mute" onclick="toggleMute()" id="muteBtn">
+                <svg class="icon"><use href="#icon-mic"/></svg>
+            </button>
+            <button class="call-btn video" onclick="toggleVideo()" id="videoBtn" style="display: none;">
+                <svg class="icon"><use href="#icon-video"/></svg>
+            </button>
+            <button class="call-btn flip" onclick="flipCamera()" id="flipBtn" style="display: none;">
+                <svg class="icon"><use href="#icon-flip"/></svg>
             </button>
             <button class="call-btn end" onclick="endCall()">
                 <svg class="icon"><use href="#icon-phone"/></svg>
-                <span>End</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Incoming Call -->
+    <div class="incoming-call" id="incomingCall">
+        <div class="call-avatar-large" id="incomingAvatar">
+            <svg class="icon icon-xl" style="color: var(--favour-rose);"><use href="#icon-user"/></svg>
+        </div>
+        <div class="call-name" id="incomingName">Favour</div>
+        <div class="call-status">Incoming call...</div>
+        
+        <div class="incoming-actions">
+            <button class="incoming-btn decline" onclick="declineCall()">
+                <svg class="icon icon-lg"><use href="#icon-close"/></svg>
+            </button>
+            <button class="incoming-btn accept" onclick="acceptCall()">
+                <svg class="icon icon-lg"><use href="#icon-phone"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeSettings()">
+                <svg class="icon"><use href="#icon-close"/></svg>
+            </button>
+            <div class="settings-title">Settings</div>
+        </div>
+        
+        <div class="settings-list">
+            <div class="settings-item" onclick="changeWallpaper()">
+                <div class="settings-item-left">
+                    <div class="settings-icon">
+                        <svg class="icon"><use href="#icon-gallery"/></svg>
+                    </div>
+                    <div class="settings-label">Chat Wallpaper</div>
+                </div>
+                <svg class="icon" style="opacity: 0.5;"><use href="#icon-send"/></svg>
+            </div>
+            
+            <div class="settings-item" onclick="toggleSound()">
+                <div class="settings-item-left">
+                    <div class="settings-icon">
+                        <svg class="icon"><use href="#icon-mic"/></svg>
+                    </div>
+                    <div class="settings-label">Sound Effects</div>
+                </div>
+                <div class="toggle active" id="soundToggle"></div>
+            </div>
+            
+            <div class="settings-item" onclick="showStreakModal()">
+                <div class="settings-item-left">
+                    <div class="settings-icon">
+                        <svg class="icon"><use href="#icon-fire"/></svg>
+                    </div>
+                    <div class="settings-label">Snap Streak</div>
+                </div>
+                <svg class="icon" style="opacity: 0.5;"><use href="#icon-send"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallpaper Modal -->
+    <div class="wallpaper-modal" id="wallpaperModal">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeWallpaperModal()">
+                <svg class="icon"><use href="#icon-close"/></svg>
+            </button>
+            <div class="settings-title">Choose Wallpaper</div>
+        </div>
+        
+        <div class="wallpaper-grid" id="wallpaperGrid">
+            <div class="wallpaper-option" onclick="setWallpaper('default')">
+                <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e, #16213e);"></div>
+                <div class="wallpaper-label">Default</div>
+            </div>
+            <div class="wallpaper-option" onclick="document.getElementById('wallpaperInput').click()">
+                <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                    <svg class="icon icon-lg"><use href="#icon-gallery"/></svg>
+                </div>
+                <div class="wallpaper-label">Custom</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streak Modal -->
+    <div class="streak-modal" id="streakModal">
+        <div class="settings-header">
+            <button class="back-btn" onclick="closeStreakModal()">
+                <svg class="icon"><use href="#icon-close"/></svg>
+            </button>
+            <div class="settings-title">Snap Streak</div>
+        </div>
+        
+        <div class="streak-header">
+            <div class="streak-flame">🔥</div>
+            <div class="streak-count" id="streakCount">0</div>
+            <div class="streak-label">Day Streak</div>
+        </div>
+        
+        <div class="streak-grid" id="streakGrid">
+            <!-- Days will be generated by JS -->
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--glass); border-radius: 16px;">
+            <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 8px;">Send snaps back and forth to keep your streak alive!</p>
+            <p style="color: #FFD700; font-size: 12px; font-weight: 600;">Next snap in: <span id="nextSnapTimer">--:--</span></p>
+        </div>
+    </div>
+
+    <!-- View Once Modal -->
+    <div class="view-once-modal" id="viewOnceModal" onclick="closeViewOnce()">
+        <div class="view-once-content" onclick="event.stopPropagation()">
+            <img id="viewOnceImg" style="display: none;">
+            <video id="viewOnceVideo" style="display: none;" autoplay></video>
+            <div class="view-once-timer" id="viewOnceTimer">5s</div>
+        </div>
+        <div class="view-once-hint">Tap to close • View once only</div>
+    </div>
+
+    <!-- Camera Interface -->
+    <div class="camera-interface" id="cameraInterface">
+        <video id="cameraPreview" autoplay playsinline></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
+        
+        <div class="camera-controls">
+            <button class="camera-close" onclick="closeCamera()">
+                <svg class="icon"><use href="#icon-close"/></svg>
+            </button>
+            <button class="camera-btn" onclick="takePhoto()"></button>
+            <button class="camera-flip" onclick="flipCamera()">
+                <svg class="icon"><use href="#icon-flip"/></svg>
             </button>
         </div>
     </div>
 
     <input type="file" id="fileInput" accept="image/*,video/*" onchange="handleFile(this)">
-    <input type="file" id="cameraInput" accept="image/*,video/*" capture onchange="handleFile(this)">
+    <input type="file" id="profileInput" accept="image/*" onchange="handleProfilePic(this)">
+    <input type="file" id="wallpaperInput" accept="image/*" onchange="handleWallpaper(this)">
 
     <script>
-        // ==================== FIREBASE CONFIG - PASTE YOURS HERE ====================
+        // ==================== FIREBASE CONFIG ====================
         const firebaseConfig = {
-            apiKey: "AIzaSyBiOpxyyEcF4H9e3naEOycfixZUETkiL-c",
-  authDomain: "just-for-us-chat.firebaseapp.com",
-  projectId: "just-for-us-chat",
-  storageBucket: "just-for-us-chat.firebasestorage.app",
-  messagingSenderId: "956164356831",
-  appId: "1:956164356831:web:5e05d2cb5673c33d47076a",
-  measurementId: "G-P43TXFHV85"
+            apiKey: "AIzaSyBo8ZcU8Nsd8tF2XOn-6lBZeFGuO-y_o5E",
+  authDomain: "just-for-us-c6365.firebaseapp.com",
+  projectId: "just-for-us-c6365",
+  storageBucket: "just-for-us-c6365.firebasestorage.app",
+  messagingSenderId: "1020198621392",
+  appId: "1:1020198621392:web:b615c46fc48a2cdbeb4ed5",
+  measurementId: "G-C12BV27YY0"
         };
 
         // Initialize Firebase
         let db = null;
+        let storage = null;
         let chatRef = null;
         let gameRef = null;
+        let callRef = null;
+        let streakRef = null;
         
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
+            storage = firebase.storage();
             console.log("Firebase ready");
         } catch (e) {
-            console.log("Firebase not configured");
+            console.log("Firebase not configured - using local mode");
+            // Local mode for testing without Firebase
+            db = {
+                ref: (path) => ({
+                    set: () => Promise.resolve(),
+                    update: () => Promise.resolve(),
+                    push: () => ({ key: Date.now().toString(), set: () => Promise.resolve() }),
+                    on: () => {},
+                    off: () => {},
+                    once: () => Promise.resolve({ val: () => null }),
+                    limitToLast: function() { return this; },
+                    orderByChild: function() { return this; },
+                    startAt: function() { return this; },
+                    child: function() { return this; }
+                })
+            };
         }
 
         // ==================== APP STATE ====================
         const USERS = {
-            Timmy: { gender: 'timmy', month: 3, symbol: 'X', color: '#0A84FF' },
-            Favour: { gender: 'favour', month: 8, symbol: 'O', color: '#FF375F' }
+            Timmy: { gender: 'timmy', month: 3, symbol: 'X', color: '#0A84FF', profilePic: null },
+            Favour: { gender: 'favour', month: 8, symbol: 'O', color: '#FF375F', profilePic: null }
         };
 
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1156,6 +1930,19 @@
         let currentUser = null;
         let partnerUser = null;
         let chatRoomId = 'timmy_favour_private';
+        let viewOnceMode = false;
+        let soundEnabled = true;
+        let typingTimeout = null;
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let currentCallType = null;
+        let isMuted = false;
+        let isVideoOff = false;
+        let facingMode = 'user';
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let cameraStream = null;
         
         // Tic-Tac-Toe State
         let tttBoard = ['', '', '', '', '', '', '', '', ''];
@@ -1163,21 +1950,106 @@
         let tttScores = { X: 0, O: 0 };
         let tttGameActive = true;
 
+        // Streak Data
+        let streakData = {
+            count: 0,
+            lastSnap: null,
+            todaySent: false,
+            todayReceived: false
+        };
+
+        // ==================== AUDIO CONTEXT FOR SOUNDS ====================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'type':
+                    oscillator.frequency.value = 800;
+                    gainNode.gain.value = 0.05;
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.03);
+                    break;
+                case 'send':
+                    oscillator.frequency.value = 1200;
+                    gainNode.gain.value = 0.1;
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'poke':
+                    oscillator.frequency.value = 400;
+                    gainNode.gain.value = 0.2;
+                    oscillator.type = 'square';
+                    oscillator.start();
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                    break;
+                case 'notification':
+                    oscillator.frequency.value = 600;
+                    gainNode.gain.value = 0.1;
+                    oscillator.start();
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime + 0.1);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+            }
+        }
+
         // ==================== AUTH ====================
         function selectUser(name) {
             currentUser = name;
             partnerUser = name === 'Timmy' ? 'Favour' : 'Timmy';
             
             document.querySelectorAll('.user-card').forEach(el => {
-                el.classList.remove('selected', 'female-selected');
+                el.classList.remove('selected');
             });
             
             const selectedEl = document.querySelector(`.user-card.${name.toLowerCase()}`);
             selectedEl.classList.add('selected');
-            if (name === 'Favour') selectedEl.classList.add('female-selected');
             
             document.getElementById('birthdaySection').style.display = 'block';
             renderMonths();
+            
+            // Load saved profile pic
+            const savedPic = localStorage.getItem(`profile_${name}`);
+            if (savedPic) {
+                USERS[name].profilePic = savedPic;
+                updateAuthAvatar(name, savedPic);
+            }
+        }
+
+        function updateAuthAvatar(user, pic) {
+            const container = document.getElementById(`${user.toLowerCase()}Avatar`);
+            container.innerHTML = `<img src="${pic}" class="profile-pic-preview">`;
+        }
+
+        function selectProfilePic(user) {
+            document.getElementById('profileInput').dataset.user = user;
+            document.getElementById('profileInput').click();
+        }
+
+        function handleProfilePic(input) {
+            if (!input.files || !input.files[0]) return;
+            const user = input.dataset.user;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                USERS[user].profilePic = e.target.result;
+                localStorage.setItem(`profile_${user}`, e.target.result);
+                updateAuthAvatar(user, e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
         }
 
         function renderMonths() {
@@ -1187,7 +2059,7 @@
             MONTHS.forEach((month, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'month-btn';
-                if (USERS[currentUser].gender === 'favour') btn.classList.add('correct', 'favour');
+                if (USERS[currentUser].gender === 'favour') btn.classList.add('favour');
                 btn.textContent = month;
                 btn.onclick = () => checkMonth(idx, btn);
                 grid.appendChild(btn);
@@ -1211,19 +2083,35 @@
         }
 
         function enterChat() {
-            if (!db) {
-                alert('Please paste your Firebase config first! (Line 595)');
-                return;
-            }
-
+            initAudio();
+            
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
             document.getElementById('missYouBtn').style.display = 'flex';
             document.getElementById('partnerName').textContent = partnerUser;
             
+            // Update send button color
+            const sendBtn = document.getElementById('sendBtn');
+            if (currentUser === 'Favour') sendBtn.classList.add('favour');
+            
+            // Update partner avatar
+            const partnerPic = USERS[partnerUser].profilePic;
+            if (partnerPic) {
+                document.getElementById('partnerAvatar').innerHTML = `<img src="${partnerPic}">`;
+                document.getElementById('callAvatar').innerHTML = `<img src="${partnerPic}">`;
+                document.getElementById('incomingAvatar').innerHTML = `<img src="${partnerPic}">`;
+            }
+            
+            // Load wallpaper
+            const savedWallpaper = localStorage.getItem('chat_wallpaper');
+            if (savedWallpaper) setWallpaper(savedWallpaper, false);
+            
             setupChat();
             setupPresence();
             setupTyping();
+            setupPokes();
+            setupCalls();
+            setupStreaks();
             
             // Request notifications
             if ('Notification' in window) Notification.requestPermission();
@@ -1236,6 +2124,18 @@
             chatRef.limitToLast(50).on('child_added', (snapshot) => {
                 const msg = snapshot.val();
                 displayMessage(msg);
+                
+                // Play sound for incoming messages
+                if (msg.sender !== currentUser && !msg.read) {
+                    playSound('notification');
+                    showNotification('New Message', `${msg.sender}: ${msg.content || 'Sent a photo'}`);
+                }
+            });
+            
+            // Mark messages as read
+            chatRef.on('child_changed', (snapshot) => {
+                const msg = snapshot.val();
+                updateReadStatus(msg);
             });
         }
 
@@ -1244,17 +2144,66 @@
             const container = document.getElementById('messagesArea');
             
             // Check for duplicate
-            if (document.getElementById(`msg-${msg.id}`)) return;
+            if (document.getElementById(`msg-${msg.id}`)) {
+                updateReadStatus(msg);
+                return;
+            }
             
             const div = document.createElement('div');
             div.id = `msg-${msg.id}`;
             div.className = `message ${isMe ? USERS[currentUser].gender : USERS[partnerUser].gender}`;
             
+            if (msg.viewOnce) div.classList.add('view-once');
+            
             const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const read = msg.read ? '✓✓' : '✓';
             
             if (msg.type === 'image') {
-                div.innerHTML = `<img src="${msg.content}" class="message-media" onclick="window.open('${msg.content}')"><div class="message-meta">${time} ${isMe ? read : ''}</div>`;
+                if (msg.viewOnce) {
+                    div.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px;">
+                            <svg class="icon"><use href="#icon-camera"/></svg>
+                            <span>View Once Photo</span>
+                        </div>
+                        <div class="message-meta">${time} ${isMe ? read : ''}</div>
+                    `;
+                    div.onclick = () => openViewOnce(msg.content, 'image');
+                } else {
+                    div.innerHTML = `<img src="${msg.content}" class="message-media" onclick="window.open('${msg.content}')"><div class="message-meta">${time} ${isMe ? read : ''}</div>`;
+                }
+            } else if (msg.type === 'video') {
+                if (msg.viewOnce) {
+                    div.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px;">
+                            <svg class="icon"><use href="#icon-video"/></svg>
+                            <span>View Once Video</span>
+                        </div>
+                        <div class="message-meta">${time} ${isMe ? read : ''}</div>
+                    `;
+                    div.onclick = () => openViewOnce(msg.content, 'video');
+                } else {
+                    div.innerHTML = `<video src="${msg.content}" class="message-media" controls onclick="event.stopPropagation()"></video><div class="message-meta">${time} ${isMe ? read : ''}</div>`;
+                }
+            } else if (msg.type === 'voice') {
+                div.innerHTML = `
+                    <div class="voice-note">
+                        <button class="voice-play-btn" onclick="playVoiceNote('${msg.content}', this)">
+                            <svg class="icon"><use href="#icon-play"/></svg>
+                        </button>
+                        <div class="voice-waveform">
+                            ${Array(20).fill(0).map(() => `<div class="wave-bar" style="height: ${Math.random() * 100}%"></div>`).join('')}
+                        </div>
+                        <span class="voice-duration">${msg.duration || '0:00'}</span>
+                    </div>
+                    <div class="message-meta">${time} ${isMe ? read : ''}</div>
+                `;
+            } else if (msg.type === 'snap') {
+                div.innerHTML = `
+                    <div style="background: #FFD700; color: black; padding: 12px; border-radius: 12px; font-weight: 600;">
+                        🔥 Snap Sent!
+                    </div>
+                    <div class="message-meta">${time} ${isMe ? read : ''}</div>
+                `;
             } else {
                 div.innerHTML = `<div>${escapeHtml(msg.content)}</div><div class="message-meta">${time} ${isMe ? read : ''}</div>`;
             }
@@ -1262,17 +2211,28 @@
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
             
+            // Mark as read if received
             if (!isMe && !msg.read) {
                 chatRef.child(msg.id).update({ read: true });
             }
         }
 
+        function updateReadStatus(msg) {
+            const el = document.getElementById(`msg-${msg.id}`);
+            if (el) {
+                const meta = el.querySelector('.message-meta');
+                if (meta && msg.read && msg.sender === currentUser) {
+                    meta.innerHTML = meta.innerHTML.replace('✓', '✓✓');
+                }
+            }
+        }
+
         function sendMessage() {
-            if (!db) { alert('Firebase not connected'); return; }
-            
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text) return;
+            
+            playSound('send');
             
             const msg = {
                 id: Date.now().toString(),
@@ -1280,12 +2240,17 @@
                 content: text,
                 type: 'text',
                 timestamp: Date.now(),
-                read: false
+                read: false,
+                viewOnce: viewOnceMode
             };
             
             chatRef.child(msg.id).set(msg);
             input.value = '';
             
+            // Reset view once
+            if (viewOnceMode) toggleViewOnce();
+            
+            // Clear typing
             db.ref(`chats/${chatRoomId}/typing/${currentUser}`).remove();
         }
 
@@ -1294,34 +2259,38 @@
                 sendMessage();
                 return;
             }
+        }
+
+        function handleTyping() {
+            playSound('type');
             
-            if (db) {
-                db.ref(`chats/${chatRoomId}/typing/${currentUser}`).set(Date.now());
-                setTimeout(() => {
-                    db.ref(`chats/${chatRoomId}/typing/${currentUser}`).remove();
-                }, 3000);
-            }
+            // Debounce typing indicator
+            clearTimeout(typingTimeout);
+            db.ref(`chats/${chatRoomId}/typing/${currentUser}`).set(Date.now());
+            
+            typingTimeout = setTimeout(() => {
+                db.ref(`chats/${chatRoomId}/typing/${currentUser}`).remove();
+            }, 2000);
         }
 
         function setupTyping() {
-            if (!db) return;
-            
-            db.ref(`chats/${chatRoomId}/typing`).on('value', (snap) => {
+            const typingRef = db.ref(`chats/${chatRoomId}/typing`);
+            typingRef.on('value', (snap) => {
                 const typing = snap.val();
+                const statusEl = document.getElementById('partnerStatus');
+                
                 if (typing && typing[partnerUser]) {
-                    document.getElementById('partnerStatus').innerHTML = `
+                    statusEl.innerHTML = `
                         <div class="typing-dots"><span></span><span></span><span></span></div>
-                        <span style="margin-left: 6px;">typing</span>
+                        <span style="margin-left: 6px;">typing...</span>
                     `;
                 } else {
-                    document.getElementById('partnerStatus').innerHTML = `<span class="status-dot"></span><span>Online</span>`;
+                    statusEl.innerHTML = `<span class="status-dot"></span><span>Online</span>`;
                 }
             });
         }
 
         function setupPresence() {
-            if (!db) return;
-            
             const myStatus = db.ref(`chats/${chatRoomId}/presence/${currentUser}`);
             myStatus.set(true);
             myStatus.onDisconnect().remove();
@@ -1330,19 +2299,45 @@
         function handleFile(input) {
             if (!input.files || !input.files[0]) return;
             
+            const file = input.files[0];
+            const isVideo = file.type.startsWith('video');
+            const isSnap = input.dataset.snap === 'true';
+            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const msg = {
                     id: Date.now().toString(),
                     sender: currentUser,
                     content: e.target.result,
-                    type: 'image',
+                    type: isVideo ? 'video' : 'image',
                     timestamp: Date.now(),
-                    read: false
+                    read: false,
+                    viewOnce: viewOnceMode
                 };
+                
                 chatRef.child(msg.id).set(msg);
+                
+                // Update streak if it's a snap
+                if (isSnap || input.dataset.fromCamera) {
+                    updateStreak();
+                }
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
+            
+            input.value = '';
+            input.dataset.snap = 'false';
+            input.dataset.fromCamera = 'false';
+        }
+
+        function toggleViewOnce() {
+            viewOnceMode = !viewOnceMode;
+            const btn = document.getElementById('viewOnceBtn');
+            btn.style.opacity = viewOnceMode ? '1' : '0.5';
+            btn.style.color = viewOnceMode ? '#FFD700' : 'white';
+            
+            if (viewOnceMode) {
+                showNotification('View Once', 'Your next message will disappear after viewing');
+            }
         }
 
         function escapeHtml(text) {
@@ -1351,7 +2346,285 @@
             return div.innerHTML;
         }
 
-        // ==================== FEATURES ====================
+        // ==================== VOICE NOTES ====================
+        function startRecording() {
+            const chip = document.getElementById('voiceChip');
+            chip.classList.add('recording');
+            
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    recordedChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) recordedChunks.push(e.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const duration = '0:03'; // Calculate actual duration
+                            sendVoiceNote(e.target.result, duration);
+                        };
+                        reader.readAsDataURL(blob);
+                    };
+                    
+                    mediaRecorder.start();
+                })
+                .catch(err => {
+                    console.error('Mic access denied:', err);
+                    alert('Please allow microphone access to send voice notes');
+                });
+        }
+
+        function stopRecording() {
+            const chip = document.getElementById('voiceChip');
+            chip.classList.remove('recording');
+            
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function sendVoiceNote(audioData, duration) {
+            const msg = {
+                id: Date.now().toString(),
+                sender: currentUser,
+                content: audioData,
+                type: 'voice',
+                duration: duration,
+                timestamp: Date.now(),
+                read: false
+            };
+            
+            chatRef.child(msg.id).set(msg);
+            playSound('send');
+        }
+
+        function playVoiceNote(audioData, btn) {
+            const audio = new Audio(audioData);
+            const icon = btn.querySelector('use');
+            
+            audio.play();
+            icon.setAttribute('href', '#icon-pause');
+            
+            audio.onended = () => {
+                icon.setAttribute('href', '#icon-play');
+            };
+        }
+
+        // ==================== CAMERA & SNAPS ====================
+        function openCamera() {
+            const camera = document.getElementById('cameraInterface');
+            const preview = document.getElementById('cameraPreview');
+            
+            camera.style.display = 'flex';
+            
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: facingMode },
+                audio: false 
+            })
+            .then(stream => {
+                cameraStream = stream;
+                preview.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Camera access denied:', err);
+                alert('Please allow camera access');
+                closeCamera();
+            });
+        }
+
+        function closeCamera() {
+            const camera = document.getElementById('cameraInterface');
+            camera.style.display = 'none';
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+        }
+
+        function flipCamera() {
+            facingMode = facingMode === 'user' ? 'environment' : 'user';
+            openCamera();
+        }
+
+        function takePhoto() {
+            const preview = document.getElementById('cameraPreview');
+            const canvas = document.getElementById('cameraCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = preview.videoWidth;
+            canvas.height = preview.videoHeight;
+            ctx.drawImage(preview, 0, 0);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            
+            // Send as snap
+            const msg = {
+                id: Date.now().toString(),
+                sender: currentUser,
+                content: dataUrl,
+                type: 'image',
+                timestamp: Date.now(),
+                read: false,
+                viewOnce: true
+            };
+            
+            chatRef.child(msg.id).set(msg);
+            updateStreak();
+            closeCamera();
+            
+            playSound('send');
+        }
+
+        // ==================== VIEW ONCE ====================
+        function openViewOnce(content, type) {
+            const modal = document.getElementById('viewOnceModal');
+            const img = document.getElementById('viewOnceImg');
+            const video = document.getElementById('viewOnceVideo');
+            const timer = document.getElementById('viewOnceTimer');
+            
+            modal.style.display = 'flex';
+            
+            if (type === 'image') {
+                img.src = content;
+                img.style.display = 'block';
+                video.style.display = 'none';
+            } else {
+                video.src = content;
+                video.style.display = 'block';
+                img.style.display = 'none';
+            }
+            
+            // Countdown
+            let seconds = 5;
+            timer.textContent = seconds + 's';
+            
+            const countdown = setInterval(() => {
+                seconds--;
+                timer.textContent = seconds + 's';
+                
+                if (seconds <= 0) {
+                    clearInterval(countdown);
+                    closeViewOnce();
+                }
+            }, 1000);
+            
+            modal.dataset.countdown = countdown;
+        }
+
+        function closeViewOnce() {
+            const modal = document.getElementById('viewOnceModal');
+            const countdown = modal.dataset.countdown;
+            
+            if (countdown) clearInterval(countdown);
+            
+            modal.style.display = 'none';
+            document.getElementById('viewOnceImg').src = '';
+            document.getElementById('viewOnceVideo').src = '';
+        }
+
+        // ==================== STREAKS ====================
+        function setupStreaks() {
+            streakRef = db.ref(`chats/${chatRoomId}/streaks`);
+            
+            streakRef.on('value', (snap) => {
+                const data = snap.val();
+                if (data) {
+                    streakData = data;
+                    updateStreakUI();
+                }
+            });
+            
+            // Check if we need to reset daily
+            checkDailyStreak();
+        }
+
+        function updateStreak() {
+            const today = new Date().toDateString();
+            
+            if (!streakData.lastSnap || new Date(streakData.lastSnap).toDateString() !== today) {
+                streakData.count++;
+                streakData.lastSnap = Date.now();
+                streakData.todaySent = true;
+                
+                streakRef.set(streakData);
+                
+                // Send streak message
+                const msg = {
+                    id: Date.now().toString(),
+                    sender: currentUser,
+                    type: 'snap',
+                    timestamp: Date.now(),
+                    read: false
+                };
+                chatRef.child(msg.id).set(msg);
+            }
+        }
+
+        function checkDailyStreak() {
+            if (!streakData.lastSnap) return;
+            
+            const lastDate = new Date(streakData.lastSnap);
+            const today = new Date();
+            const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 1) {
+                // Streak broken
+                streakData.count = 0;
+                streakRef.set(streakData);
+            }
+        }
+
+        function updateStreakUI() {
+            const badge = document.getElementById('streakBadge');
+            const avatar = document.getElementById('partnerAvatar');
+            
+            if (streakData.count > 0) {
+                badge.style.display = 'block';
+                badge.textContent = `🔥 ${streakData.count}`;
+                avatar.classList.add('has-streak');
+            } else {
+                badge.style.display = 'none';
+                avatar.classList.remove('has-streak');
+            }
+            
+            document.getElementById('streakCount').textContent = streakData.count;
+        }
+
+        function showStreakModal() {
+            document.getElementById('streakModal').style.display = 'flex';
+            renderStreakGrid();
+        }
+
+        function closeStreakModal() {
+            document.getElementById('streakModal').style.display = 'none';
+        }
+
+        function renderStreakGrid() {
+            const grid = document.getElementById('streakGrid');
+            grid.innerHTML = '';
+            
+            const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            const today = new Date().getDay();
+            
+            days.forEach((day, idx) => {
+                const div = document.createElement('div');
+                div.className = 'streak-day';
+                div.textContent = day;
+                
+                if (idx === today) div.classList.add('today');
+                if (idx <= today && streakData.count > 0) div.classList.add('active');
+                
+                grid.appendChild(div);
+            });
+        }
+
+        // ==================== GAMES ====================
         function openGameModal() {
             document.getElementById('gameModal').style.display = 'flex';
         }
@@ -1362,90 +2635,16 @@
             }
         }
 
-        function comingSoon(game) {
-            alert(`${game} coming in next update!`);
-        }
-
-        function pokePartner() {
-            if (!db) return;
-            
-            db.ref(`chats/${chatRoomId}/pokes`).push({
-                from: currentUser,
-                to: partnerUser,
-                timestamp: Date.now()
-            });
-            
-            document.getElementById('pokeText').textContent = `You poked ${partnerUser}`;
-            document.getElementById('pokeScreen').style.display = 'flex';
-            setTimeout(() => document.getElementById('pokeScreen').style.display = 'none', 2000);
-            
-            if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]);
-        }
-
-        // Listen for pokes
-        if (db) {
-            db.ref(`chats/${chatRoomId}/pokes`).orderByChild('timestamp').startAt(Date.now()).on('child_added', (snap) => {
-                const poke = snap.val();
-                if (poke.to === currentUser) {
-                    document.getElementById('pokeText').textContent = `${poke.from} poked you!`;
-                    document.getElementById('pokeScreen').style.display = 'flex';
-                    if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]);
-                    setTimeout(() => document.getElementById('pokeScreen').style.display = 'none', 2000);
-                }
-            });
-        }
-
-        function sendMissYou() {
-            if (!db) return;
-            
-            const msg = {
-                id: Date.now().toString(),
-                sender: currentUser,
-                content: "I miss you so much it hurts 💔",
-                type: 'text',
-                timestamp: Date.now(),
-                read: false
-            };
-            chatRef.child(msg.id).set(msg);
-            
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300, 100, 300]);
-        }
-
-        function startCall() {
-            document.getElementById('callScreen').style.display = 'flex';
-            document.getElementById('callName').textContent = partnerUser;
-            
-            setTimeout(() => {
-                document.getElementById('callTimer').textContent = '00:00';
-                let seconds = 0;
-                window.callInterval = setInterval(() => {
-                    seconds++;
-                    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                    const secs = (seconds % 60).toString().padStart(2, '0');
-                    document.getElementById('callTimer').textContent = `${mins}:${secs}`;
-                }, 1000);
-            }, 2000);
-        }
-
-        function endCall() {
-            clearInterval(window.callInterval);
-            document.getElementById('callScreen').style.display = 'none';
-        }
-
-        // ==================== TIC-TAC-TOE ====================
         function startTicTacToe() {
             closeGameModal();
             document.getElementById('tictactoeBoard').style.display = 'flex';
             initTicTacToe();
             
-            // Setup Firebase sync
-            if (db) {
-                gameRef = db.ref(`chats/${chatRoomId}/tictactoe`);
-                gameRef.on('value', (snap) => {
-                    const data = snap.val();
-                    if (data) syncTicTacToe(data);
-                });
-            }
+            gameRef = db.ref(`chats/${chatRoomId}/tictactoe`);
+            gameRef.on('value', (snap) => {
+                const data = snap.val();
+                if (data) syncTicTacToe(data);
+            });
         }
 
         function closeTicTacToe() {
@@ -1468,55 +2667,82 @@
                 cell.onclick = () => makeMove(i);
                 grid.appendChild(cell);
             }
+            
+            // Reset scores display
+            document.getElementById('scoreX').textContent = tttScores.X;
+            document.getElementById('scoreO').textContent = tttScores.O;
         }
 
         function makeMove(index) {
             if (!tttGameActive || tttBoard[index] !== '') return;
             
-            // Check if it's my turn
             const mySymbol = USERS[currentUser].symbol;
             if (tttCurrentPlayer !== mySymbol) {
-                alert("Wait for your turn!");
+                showNotification('Wait!', 'Not your turn');
                 return;
             }
             
             tttBoard[index] = tttCurrentPlayer;
             updateCell(index, tttCurrentPlayer);
             
-            // Sync to Firebase
-            if (gameRef) {
-                gameRef.set({
-                    board: tttBoard,
-                    currentPlayer: tttCurrentPlayer === 'X' ? 'O' : 'X',
-                    lastMove: index,
-                    lastMoveBy: currentUser,
-                    timestamp: Date.now()
-                });
-            }
+            // Check winner before syncing
+            const winner = checkWinner();
             
-            checkWinner();
+            gameRef.set({
+                board: tttBoard,
+                currentPlayer: tttCurrentPlayer === 'X' ? 'O' : 'X',
+                lastMove: index,
+                lastMoveBy: currentUser,
+                winner: winner,
+                timestamp: Date.now()
+            });
+            
+            if (!winner && !tttBoard.includes('')) {
+                setTimeout(() => {
+                    alert("Draw!");
+                    resetGame();
+                }, 500);
+            }
         }
 
         function syncTicTacToe(data) {
             if (!data || !data.board) return;
             
-            tttBoard = data.board;
-            tttCurrentPlayer = data.currentPlayer;
+            // Only update if different from current
+            const currentBoardStr = tttBoard.join('');
+            const newBoardStr = data.board.join('');
             
-            // Update all cells
-            tttBoard.forEach((val, idx) => {
-                if (val) updateCell(idx, val);
-            });
-            
-            updateTurnIndicator();
-            
-            // Check if game just ended
-            checkWinner(true);
+            if (currentBoardStr !== newBoardStr) {
+                tttBoard = data.board;
+                tttCurrentPlayer = data.currentPlayer;
+                
+                tttBoard.forEach((val, idx) => {
+                    if (val) updateCell(idx, val);
+                });
+                
+                updateTurnIndicator();
+                
+                // Handle winner
+                if (data.winner) {
+                    tttGameActive = false;
+                    tttScores[data.winner]++;
+                    document.getElementById('scoreX').textContent = tttScores.X;
+                    document.getElementById('scoreO').textContent = tttScores.O;
+                    
+                    // Highlight winning cells
+                    highlightWinningCells(data.board);
+                    
+                    setTimeout(() => {
+                        alert(`${data.winner === 'X' ? 'Timmy' : 'Favour'} wins!`);
+                        resetGame();
+                    }, 1000);
+                }
+            }
         }
 
         function updateCell(index, player) {
             const cell = document.querySelector(`.tictactoe-cell[data-index="${index}"]`);
-            if (!cell || cell.classList.contains('taken')) return;
+            if (!cell) return;
             
             cell.classList.add('taken', player.toLowerCase());
             cell.innerHTML = player === 'X' 
@@ -1527,42 +2753,439 @@
         function updateTurnIndicator() {
             const isMyTurn = tttCurrentPlayer === USERS[currentUser].symbol;
             const playerName = tttCurrentPlayer === 'X' ? 'Timmy' : 'Favour';
-            const color = tttCurrentPlayer === 'X' ? 'var(--timmy-blue)' : 'var(--favour-rose)';
-            const Icon = tttCurrentPlayer === 'X' ? '#icon-x' : '#icon-o';
             
             document.getElementById('turnIndicator').innerHTML = `
                 <span>${isMyTurn ? 'Your turn' : `${playerName}'s turn`}</span>
-                <svg class="icon" style="color: ${color};"><use href="${Icon}"/></svg>
             `;
         }
 
-        function checkWinner(fromSync = false) {
+        function checkWinner() {
             const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
             
             for (const [a, b, c] of wins) {
                 if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) {
-                    tttGameActive = false;
-                    const winner = tttBoard[a];
-                    tttScores[winner]++;
-                    document.getElementById('scoreX').textContent = tttScores.X;
-                    document.getElementById('scoreO').textContent = tttScores.O;
-                    
-                    setTimeout(() => {
-                        alert(`${winner === 'X' ? 'Timmy' : 'Favour'} wins!`);
-                        initTicTacToe();
-                    }, 500);
-                    return;
+                    return tttBoard[a];
                 }
             }
+            return null;
+        }
+
+        function highlightWinningCells(board) {
+            const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
             
-            if (!tttBoard.includes('')) {
-                tttGameActive = false;
-                setTimeout(() => {
-                    alert("Draw!");
-                    initTicTacToe();
-                }, 500);
+            for (const [a, b, c] of wins) {
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    [a, b, c].forEach(idx => {
+                        document.querySelector(`.tictactoe-cell[data-index="${idx}"]`)?.classList.add('win');
+                    });
+                }
             }
         }
+
+        function resetGame() {
+            setTimeout(() => {
+                initTicTacToe();
+                gameRef.set({
+                    board: ['', '', '', '', '', '', '', '', ''],
+                    currentPlayer: 'X',
+                    timestamp: Date.now()
+                });
+            }, 500);
+        }
+
+        // ==================== POKE ====================
+        function pokePartner() {
+            db.ref(`chats/${chatRoomId}/pokes`).push({
+                from: currentUser,
+                to: partnerUser,
+                timestamp: Date.now()
+            });
+            
+            document.getElementById('pokeText').textContent = `You poked ${partnerUser}`;
+            document.getElementById('pokeScreen').style.display = 'flex';
+            playSound('poke');
+            
+            if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]);
+            
+            setTimeout(() => {
+                document.getElementById('pokeScreen').style.display = 'none';
+            }, 2000);
+        }
+
+        function setupPokes() {
+            db.ref(`chats/${chatRoomId}/pokes`).orderByChild('timestamp').startAt(Date.now()).on('child_added', (snap) => {
+                const poke = snap.val();
+                if (poke.to === currentUser) {
+                    document.getElementById('pokeText').textContent = `${poke.from} poked you!`;
+                    document.getElementById('pokeScreen').style.display = 'flex';
+                    playSound('poke');
+                    
+                    showNotification('Poke!', `${poke.from} poked you`);
+                    
+                    if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]);
+                    
+                    setTimeout(() => {
+                        document.getElementById('pokeScreen').style.display = 'none';
+                    }, 2000);
+                }
+            });
+        }
+
+        // ==================== CALLS (WebRTC) ====================
+        function setupCalls() {
+            callRef = db.ref(`chats/${chatRoomId}/calls`);
+            
+            callRef.on('value', (snap) => {
+                const call = snap.val();
+                if (!call) return;
+                
+                if (call.status === 'incoming' && call.to === currentUser && !call.answered) {
+                    showIncomingCall(call);
+                } else if (call.status === 'ended') {
+                    endCall();
+                } else if (call.status === 'answered' && call.from === currentUser) {
+                    connectCall(call);
+                }
+            });
+        }
+
+        function startVoiceCall() {
+            startCall('voice');
+        }
+
+        function startVideoCall() {
+            startCall('video');
+        }
+
+        function startCall(type) {
+            currentCallType = type;
+            
+            const callData = {
+                from: currentUser,
+                to: partnerUser,
+                type: type,
+                status: 'incoming',
+                answered: false,
+                timestamp: Date.now()
+            };
+            
+            callRef.set(callData);
+            
+            // Show calling screen
+            document.getElementById('callScreen').style.display = 'flex';
+            document.getElementById('callTimer').textContent = 'Calling...';
+            document.getElementById('callStatus').textContent = 'Waiting for answer...';
+            document.getElementById('remoteVideo').style.display = 'none';
+            document.getElementById('localVideo').style.display = 'none';
+            document.getElementById('videoBtn').style.display = type === 'video' ? 'flex' : 'none';
+            document.getElementById('flipBtn').style.display = type === 'video' ? 'flex' : 'none';
+            
+            // Get local stream for preview
+            const constraints = {
+                audio: true,
+                video: type === 'video'
+            };
+            
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    localStream = stream;
+                    if (type === 'video') {
+                        document.getElementById('localVideo').srcObject = stream;
+                        document.getElementById('localVideo').style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    console.error('Media error:', err);
+                    alert('Could not access microphone/camera');
+                    endCall();
+                });
+        }
+
+        function showIncomingCall(call) {
+            document.getElementById('incomingCall').style.display = 'flex';
+            document.getElementById('incomingName').textContent = call.from;
+            
+            // Auto-decline after 30 seconds
+            setTimeout(() => {
+                if (document.getElementById('incomingCall').style.display === 'flex') {
+                    declineCall();
+                }
+            }, 30000);
+        }
+
+        function acceptCall() {
+            document.getElementById('incomingCall').style.display = 'none';
+            
+            callRef.update({ 
+                status: 'answered',
+                answered: true 
+            });
+            
+            document.getElementById('callScreen').style.display = 'flex';
+            document.getElementById('callTimer').textContent = '00:00';
+            document.getElementById('callStatus').textContent = 'Connected';
+            
+            const callType = currentCallType || 'voice';
+            document.getElementById('videoBtn').style.display = callType === 'video' ? 'flex' : 'none';
+            document.getElementById('flipBtn').style.display = callType === 'video' ? 'flex' : 'none';
+            
+            // Get media and connect
+            const constraints = {
+                audio: true,
+                video: callType === 'video'
+            };
+            
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    localStream = stream;
+                    if (callType === 'video') {
+                        document.getElementById('localVideo').srcObject = stream;
+                        document.getElementById('localVideo').style.display = 'block';
+                    }
+                    setupPeerConnection(true);
+                });
+        }
+
+        function declineCall() {
+            document.getElementById('incomingCall').style.display = 'none';
+            callRef.update({ status: 'declined' });
+            setTimeout(() => callRef.remove(), 1000);
+        }
+
+        function connectCall(call) {
+            document.getElementById('callTimer').textContent = '00:00';
+            document.getElementById('callStatus').textContent = 'Connected';
+            startCallTimer();
+            setupPeerConnection(false);
+        }
+
+        function setupPeerConnection(isCaller) {
+            // Simple peer connection setup
+            const configuration = {
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            };
+            
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Add local stream
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Handle remote stream
+            peerConnection.ontrack = (event) => {
+                remoteStream = event.streams[0];
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+                document.getElementById('remoteVideo').style.display = 'block';
+                document.getElementById('callContent').style.display = 'none';
+            };
+            
+            // Signaling via Firebase would go here
+            // For demo purposes, we'll just show connected state
+            startCallTimer();
+        }
+
+        function startCallTimer() {
+            let seconds = 0;
+            window.callInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                document.getElementById('callTimer').textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function toggleMute() {
+            if (!localStream) return;
+            
+            isMuted = !isMuted;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+            
+            document.getElementById('muteBtn').classList.toggle('active', isMuted);
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            
+            isVideoOff = !isVideoOff;
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !isVideoOff;
+            });
+            
+            document.getElementById('videoBtn').classList.toggle('active', isVideoOff);
+        }
+
+        function flipCamera() {
+            // Implementation would switch camera
+            facingMode = facingMode === 'user' ? 'environment' : 'user';
+            
+            // Restart video with new facing mode
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.stop();
+                navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode },
+                    audio: true
+                }).then(stream => {
+                    const newVideoTrack = stream.getVideoTracks()[0];
+                    localStream.removeTrack(videoTrack);
+                    localStream.addTrack(newVideoTrack);
+                    document.getElementById('localVideo').srcObject = localStream;
+                    
+                    // Update peer connection
+                    const sender = peerConnection.getSenders().find(s => 
+                        s.track && s.track.kind === 'video'
+                    );
+                    if (sender) sender.replaceTrack(newVideoTrack);
+                });
+            }
+        }
+
+        function endCall() {
+            clearInterval(window.callInterval);
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            document.getElementById('callScreen').style.display = 'none';
+            document.getElementById('remoteVideo').style.display = 'none';
+            document.getElementById('localVideo').style.display = 'none';
+            document.getElementById('callContent').style.display = 'flex';
+            
+            callRef.update({ status: 'ended' });
+            setTimeout(() => callRef.remove(), 2000);
+        }
+
+        // ==================== SETTINGS ====================
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').classList.toggle('active', soundEnabled);
+            localStorage.setItem('sound_enabled', soundEnabled);
+        }
+
+        function changeWallpaper() {
+            document.getElementById('wallpaperModal').style.display = 'flex';
+        }
+
+        function closeWallpaperModal() {
+            document.getElementById('wallpaperModal').style.display = 'none';
+        }
+
+        function setWallpaper(url, save = true) {
+            const bg = document.getElementById('wallpaperBg');
+            
+            if (url === 'default') {
+                bg.style.backgroundImage = '';
+                bg.style.opacity = '0';
+            } else {
+                bg.style.backgroundImage = `url(${url})`;
+                bg.style.opacity = '0.3';
+            }
+            
+            if (save) {
+                localStorage.setItem('chat_wallpaper', url);
+            }
+            
+            closeWallpaperModal();
+        }
+
+        function handleWallpaper(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setWallpaper(e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        // ==================== NOTIFICATIONS ====================
+        function showNotification(title, body) {
+            const notif = document.getElementById('notification');
+            document.getElementById('notifTitle').textContent = title;
+            document.getElementById('notifBody').textContent = body;
+            
+            // Set icon based on type
+            const icon = notif.querySelector('.notification-icon svg use');
+            if (title.includes('Poke')) {
+                notif.className = 'notification poke';
+                icon.setAttribute('href', '#icon-poke');
+            } else if (title.includes('Call')) {
+                notif.className = 'notification call';
+                icon.setAttribute('href', '#icon-phone');
+            } else {
+                notif.className = 'notification message';
+                icon.setAttribute('href', '#icon-heart');
+            }
+            
+            notif.classList.add('show');
+            
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+            
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body });
+            }
+        }
+
+        // ==================== FEATURES ====================
+        function sendMissYou() {
+            const msg = {
+                id: Date.now().toString(),
+                sender: currentUser,
+                content: "I miss you so much it hurts 💔",
+                type: 'text',
+                timestamp: Date.now(),
+                read: false
+            };
+            chatRef.child(msg.id).set(msg);
+            
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300, 100, 300]);
+            playSound('send');
+        }
+
+        // Load saved settings
+        const savedSound = localStorage.getItem('sound_enabled');
+        if (savedSound !== null) {
+            soundEnabled = savedSound === 'true';
+            if (!soundEnabled) document.getElementById('soundToggle').classList.remove('active');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Preload images
+            const preloadImages = () => {
+                const images = document.querySelectorAll('img');
+                images.forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (src) {
+                        const newImg = new Image();
+                        newImg.src = src;
+                    }
+                });
+            };
+            
+            setTimeout(preloadImages, 1000);
+        });
     </script>
 </body>
 </html>
